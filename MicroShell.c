@@ -55,6 +55,7 @@ int run_cmd(char *cmd, cmd_t CMDS[], unsigned int CMDS_size){
 		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 			printf("  %s : %s\r\n",def_cmds[i].cmd,def_cmds[i].desc);
 		}
+		printf("> ");
 		return 0;
 	}
 
