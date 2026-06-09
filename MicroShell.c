@@ -43,6 +43,20 @@ int run_cmd(char *cmd, cmd_t CMDS[], unsigned int CMDS_size){
 			}
 		}
 	}
+	if(strcmp(argv[0],"list") == 0){
+		if(CMDS != NULL){
+			printf("Added commands:\r\n");
+			for(unsigned int i = 0; i < CMDS_size; i++){
+				printf("  %s : %s\r\n",CMDS[i].cmd,CMDS[i].desc);
+			}
+		}
+		printf("Default commands:\r\n");
+		printf("  list : Lists the commands\r\n");
+		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
+			printf("  %s : %s\r\n",def_cmds[i].cmd,def_cmds[i].desc);
+		}
+	}
+
 	for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 		if(strcmp(def_cmds[i].cmd,argv[0]) == 0){
 			def_cmds[i].func(argc,argv);
