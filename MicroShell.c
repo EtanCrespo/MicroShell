@@ -55,14 +55,14 @@ int run_cmd(char *cmd, cmd_t CMDS[], unsigned int CMDS_size){
 		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 			printf("  %s : %s\r\n",def_cmds[i].cmd,def_cmds[i].desc);
 		}
+		return 0;
 	}
-	else{
-		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
-			if(strcmp(def_cmds[i].cmd,argv[0]) == 0){
-				def_cmds[i].func(argc,argv);
-				printf("> ");
-				return 0;
-			}
+
+	for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
+		if(strcmp(def_cmds[i].cmd,argv[0]) == 0){
+			def_cmds[i].func(argc,argv);
+			printf("> ");
+			return 0;
 		}
 	}
 	if(argv[0] == NULL){
