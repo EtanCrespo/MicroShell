@@ -64,11 +64,6 @@ void init(void){
 }
 
 int process(cmd_t CMDS[], unsigned int CMDS_size){
-	static int first_time = 1;
-	if(first_time){
-		printf("MicroShell\r\n> ");
-		first_time = 0;
-	}
 	char c;
 	printf("\033[s");
 	c = getchar();
