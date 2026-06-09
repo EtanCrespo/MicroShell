@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
+void init(void);
+int process(cmd_t CMDS[], unsigned int CMDS_size);
+
+MicroShell_t MicroShell = {init, process};
+
 char G_cmd[MICROSHELL_MAX_CMD];
 int G_cmd_pos = 0;
 
@@ -54,10 +59,14 @@ int run_cmd(char *cmd, cmd_t CMDS[], unsigned int CMDS_size){
 	return -1;
 }
 
-int MicroShell(cmd_t CMDS[], unsigned int CMDS_size){
+void init(void){
+	printf("MicroShell\r\n> ");
+}
+
+int process(cmd_t CMDS[], unsigned int CMDS_size){
 	static int first_time = 1;
 	if(first_time){
-		printf("\r\nMicroShell\r\n> ");
+		printf("MicroShell\r\n> ");
 		first_time = 0;
 	}
 	char c;

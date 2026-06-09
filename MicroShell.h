@@ -19,6 +19,11 @@ typedef struct{
 	const char *desc;
 } cmd_t;
 
-int MicroShell(cmd_t CMDS[], unsigned int CMDS_size);
+typedef struct{
+	void(*init)(void);
+	int(*process)(cmd_t CMDS[], unsigned int CMDS_size);
+} MicroShell_t;
+
+extern MicroShell_t MicroShell;
 
 #endif
