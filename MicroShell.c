@@ -91,11 +91,15 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 	c = getchar();
 	switch(c){
 		case '\r':
+			ENTER:  // No need to rewrite this for \n since we can use a goto
 			G_cmd[G_cmd_pos++] = ' ';
 			G_cmd[G_cmd_pos] = '\0';
 			G_cmd_pos = 0;
 			printf("\r\n");
 			G_cmd_run = 1;
+			break;
+		case '\n':
+			goto ENTER;
 			break;
 		case '\t':
 			printf("\033[u");
