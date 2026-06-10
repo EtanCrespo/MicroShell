@@ -21,7 +21,8 @@ typedef struct{
 
 typedef struct{
 	void(*init)(void);
-	int(*process)(cmd_t CMDS[], unsigned int CMDS_size);
+	int(*acquire)(cmd_t CMDS[], unsigned int CMDS_size);
+	int(*run)(cmd_t CMDS[], unsigned int CMDS_size);
 } MicroShell_t;
 
 extern MicroShell_t MicroShell;
