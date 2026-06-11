@@ -104,6 +104,10 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 		case '\t':
 			printf("\033[u");
 			break;
+		case '\177':
+			G_cmd[G_cmd_pos--] = '\0';
+//			printf("\033[K");
+			break;
 		default:
 			G_cmd[(G_cmd_pos++)%MICROSHELL_MAX_CMD] = c;
 			//printf("c value:%d\r\n",c);
