@@ -10,6 +10,9 @@ MicroShell_t MicroShell = {init, acquire, run_cmd};
 
 char G_cmd[MICROSHELL_MAX_CMD];
 int G_cmd_pos = 0;
+char G_history[MICROSHELL_MAX_HISTORY_SIZE][MICROSHELL_MAX_CMD];
+int G_history_size = 0;
+int G_history_pos = 0;
 short unsigned int G_cmd_run = 0;
 
 int cmd_clear(int argc, char **argv);
@@ -86,9 +89,32 @@ void init(void){
 }
 
 int acquire(cmd_t CMDS[], unsigned int CMDS_size){
+	static short unsigned int arrow = 2;
 	char c;
-	printf("\033[s");
 	c = getchar();
+	if(arrow == 0){
+		arrow = 2;
+		switch(c){
+			case 'A':
+				printf("\033[B");
+				strcpy((char*)G_cmd,(char*)G_history[G_history_pos]);
+				G_history_pos = (((G_history_pos-1)%((G_history_size-1))) == -1)?G_history_size-1:((G_history_pos-1)%((G_history_size-1)));
+				G_cmd_pos = strlen((char*)G_cmd);
+				printf("\r\033[K> %s",G_cmd);
+				break;
+			case 'B':
+				printf("\033[A");
+				G_history_pos = (G_history_pos+1)%G_history_size;
+				strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
+				G_cmd_pos = strlen((char *)G_cmd);
+				printf("\r\033[K> %s",G_cmd);
+				break;
+			default:
+				printf("\r\nunused escape sequence detected\r\n");
+				break;
+		}
+		return 0;
+	}
 	switch(c){
 		case '\r':
 			ENTER:  // No need to rewrite this for \n since we can use a goto
@@ -97,16 +123,28 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			G_cmd_pos = 0;
 			printf("\r\n");
 			G_cmd_run = 1;
+			if(strlen((char *)G_cmd) != 0){               
+				strcpy((char *)G_history[G_history_size], (char *)G_cmd);
+				G_history_size = (G_history_size+1)%MICROSHELL_MAX_HISTORY_SIZE;
+				G_history_pos = G_history_size-1;
+			}
 			break;
 		case '\n':
 			goto ENTER;
 			break;
 		case '\t':
-			printf("\033[u");
+			printf("\r\033[%dC",G_cmd_pos+2);
 			break;
 		case '\177':
 			G_cmd[G_cmd_pos--] = '\0';
-//			printf("\033[K");
+			break;
+		case '\033':
+			arrow--;
+			break;
+		case '[':
+			if(arrow == 1){
+				arrow--;
+			}
 			break;
 		default:
 			G_cmd[(G_cmd_pos++)%MICROSHELL_MAX_CMD] = c;
