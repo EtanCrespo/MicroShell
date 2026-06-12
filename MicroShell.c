@@ -16,13 +16,25 @@ int G_history_pos = 0;
 short unsigned int G_cmd_run = 0;
 
 int cmd_clear(int argc, char **argv);
+int cmd_history(int argc, char **argv);
 
 const cmd_t def_cmds[] ={
 	{"clear", cmd_clear, "Clears the screen"},
+	{"history", cmd_history, "Prints the history"},
 };
 
 int cmd_clear(int argc, char **argv){
 	printf("\033[2J\033[0;0H");
+	return 0;
+}
+
+int cmd_history(int argc, char **argv){
+	if(argc == 1){
+		printf("History:\r\n");
+		for(int i = 0; i < G_history_size; i++){
+			printf("  %d: %s\r\n",i+1,G_history[i]);
+		}
+	}
 	return 0;
 }
 
