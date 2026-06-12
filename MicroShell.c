@@ -128,6 +128,18 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				G_history_size = (G_history_size+1)%MICROSHELL_MAX_HISTORY_SIZE;
 				G_history_pos = G_history_size-1;
 			}
+			char *cmd = "0";
+			char *cmd0;
+			strcpy(cmd, G_cmd);
+			cmd0 = strtok(cmd," ");
+			if(strcmp(cmd0,"reboot") == 0){
+				for(unsigned int i = 0; i < CMDS_size; i++){
+					if(strcmp(CMDS[i].cmd,cmd0) == 0){
+						CMDS[i].func(1,&cmd0);
+						return 0;
+					}
+				}
+			}
 			break;
 		case '\n':
 			goto ENTER;
