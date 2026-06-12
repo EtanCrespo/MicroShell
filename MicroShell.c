@@ -198,7 +198,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			G_cmd[G_cmd_pos] = c;
 			G_cmd_pos = (G_cmd_pos+1)%MICROSHELL_MAX_CMD;
 			if(G_cmd_pos == 0){
-				printf("\r\n/!\\ Max sie of a command overflow, you will erased it, might consider overriding MICROSHELL_MAX_CMD with a define\r\n> ");
+				printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
 			}
 			//printf("c value:%d\r\n",c);
 			break;
