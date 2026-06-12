@@ -1,6 +1,7 @@
 #include "MicroShell.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifdef NO_ECHO
 	void _scanf(char *str, char*c){
@@ -41,6 +42,15 @@ int cmd_history(int argc, char **argv){
 		printf("History:\r\n");
 		for(int i = 0; i < G_history_size; i++){
 			printf("  %d: %s\r\n",i+1,G_history[i]);
+		}
+	}
+	else if(argc == 2){
+		if(strcmp(argv[1],"clear") == 0){
+			G_history_size = 0;
+		}
+		else if(atoi(argv[1]) > 0 && atoi(argv[1]) <G_history_size){
+			strcpy((char*)G_cmd,G_history[atoi(argv[1])-1]);
+			G_cmd_run = 1;
 		}
 	}
 	return 0;
@@ -171,6 +181,10 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			break;
 		case '\177':
 			G_cmd[G_cmd_pos--] = '\0';
+			if(G_cmd_pos < 0){
+				G_cmd_pos = 0;
+				printf("\r\033[2C");
+			}
 			break;
 		case '\033':
 			arrow--;
