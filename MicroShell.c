@@ -2,6 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef NO_ECHO
+	void _scanf(char *str, char*c){
+		scanf("%c",c);
+		printf("%c",*c);
+	}
+	#define scanf(str,c) _scanf(str,c)
+#endif
+
 void init(void);
 int acquire(cmd_t CMDS[], unsigned int CMDS_size);
 int run_cmd(cmd_t CMDS[], unsigned int CMDS_size);
@@ -103,7 +111,7 @@ void init(void){
 int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 	static short unsigned int arrow = 2;
 	char c;
-	c = getchar();
+	scanf("%c",&c);
 	if(arrow == 0){
 		arrow = 2;
 		switch(c){
