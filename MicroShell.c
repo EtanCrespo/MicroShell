@@ -118,6 +118,59 @@ void init(void){
 	printf("MicroShell\r\n> ");
 }
 
+void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
+	char matches[CMDS_size+sizeof(def_cmds)/sizeof(cmd_t)][MICROSHELL_MAX_CMD];
+	int matches_size = 0;
+	int match_cnt = 0;
+	// Used only when there's one match
+	int match;
+	for(unsigned int i = 0; i < CMDS_size; i++){
+		if(G_cmd[0] == CMDS[i].cmd[0]){
+			strcpy((char*)matches[matches_size++],CMDS[i].cmd);
+			match_cnt++;
+		}
+	}
+
+	for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
+		if(G_cmd[0] == def_cmds[i].cmd[0]){
+			strcpy((char*)matches[matches_size++],def_cmds[i].cmd);
+			match_cnt++;
+		}
+	}
+
+	if(match_cnt == 0){
+		return;
+	}
+
+	for(int i = 0; i < G_cmd_pos; i++){
+		if(match_cnt == 1){
+			break;
+		}
+		for(int j = 0; j < matches_size; j++){
+			if(match_cnt == 1){
+				match = j;
+				break;
+			}
+			if(G_cmd[i] != matches[j][i]){
+				matches[j][0] = '\0';
+				match_cnt--;
+			}
+		}
+	}
+
+	if(match_cnt == 1){
+		strcpy((char*)G_cmd,matches[match]);
+		G_cmd_pos = strlen(G_cmd);
+		printf("\r> %s\033[J",G_cmd);
+		return;
+	}
+	printf("\033[s\r\n\033[K");
+	for(int i = 0; i < matches_size; i++){
+		printf("%s\t",matches[i]);
+	}
+	printf("\033[u");
+}
+
 int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 	static short unsigned int arrow = 2;
 	char c;
@@ -178,6 +231,14 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			break;
 		case '\t':
 			printf("\r\033[%dC",G_cmd_pos+2);
+			if(G_cmd_pos == 0){
+				strcpy(G_cmd,"list");
+				printf("\r");
+				G_cmd_run = 1;
+				return 0;
+			}
+			G_cmd[G_cmd_pos] = '\0';
+			autocomplete(CMDS,CMDS_size);
 			break;
 		case '\177':
 			G_cmd[G_cmd_pos--] = '\0';
