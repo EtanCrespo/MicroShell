@@ -15,6 +15,7 @@ char G_history[MICROSHELL_MAX_HISTORY_SIZE][MICROSHELL_MAX_CMD];
 int G_history_size = 0;
 int G_history_pos = 0;
 short unsigned int G_cmd_run = 0;
+short unsigned int G_from_history = 0;
 
 int cmd_clear(int argc, char **argv);
 int cmd_history(int argc, char **argv);
@@ -42,6 +43,7 @@ int cmd_history(int argc, char **argv){
 		}
 		else if(atoi(argv[1]) > 0 && atoi(argv[1]) <G_history_size){
 			strcpy((char*)G_cmd,G_history[atoi(argv[1])-1]);
+			G_from_history = 1;
 			G_cmd_run = 1;
 		}
 	}
@@ -91,7 +93,10 @@ int MicroShell_c::run(cmd_t CMDS[], unsigned int CMDS_size){
 		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 			if(strcmp(def_cmds[i].cmd,argv[0]) == 0){
 				def_cmds[i].func(argc,argv);
-				Serial.printf("> ");
+				if(G_from_history == 0){
+					Serial.printf("> ");
+				}
+				G_from_history = 0;
 				return 0;
 			}
 		}
