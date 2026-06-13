@@ -1,22 +1,13 @@
-#include "MicroShell.h"
+#include "MicroShell.hpp"
 #include <Arduino.h>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 
-#ifdef NO_ECHO
-	void _scanf(char *str, char*c){
-		scanf("%c",c);
-		printf("%c",*c);
-	}
-	#define scanf(str,c) _scanf(str,c)
-#endif
-
 void init(void);
 int acquire(cmd_t CMDS[], unsigned int CMDS_size);
 int run_cmd(cmd_t CMDS[], unsigned int CMDS_size);
 
-MicroShell_t MicroShell = {init, acquire, run_cmd};
 
 char G_cmd[MICROSHELL_MAX_CMD];
 int G_cmd_pos = 0;
@@ -34,15 +25,15 @@ const cmd_t def_cmds[] ={
 };
 
 int cmd_clear(int argc, char **argv){
-	printf("\033[2J\033[0;0H\r\n");
+	Serial.printf("\033[2J\033[0;0H\r\n");
 	return 0;
 }
 
 int cmd_history(int argc, char **argv){
 	if(argc == 1){
-		printf("History:\r\n");
+		Serial.printf("History:\r\n");
 		for(int i = 0; i < G_history_size; i++){
-			printf("  %d: %s\r\n",i+1,G_history[i]);
+			Serial.printf("  %d: %s\r\n",i+1,G_history[i]);
 		}
 	}
 	else if(argc == 2){
@@ -57,7 +48,7 @@ int cmd_history(int argc, char **argv){
 	return 0;
 }
 
-int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
+int MicroShell_c::run(cmd_t CMDS[], unsigned int CMDS_size){
 	if(G_cmd_run == 1){
 		G_cmd_run = 0;
 		char *argv[MICROSHELL_MAX_ARGS];
@@ -76,46 +67,46 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 			for(unsigned int i = 0; i < CMDS_size; i++){
 				if(strcmp(CMDS[i].cmd,argv[0]) == 0){
 					CMDS[i].func(argc,argv);
-					printf("> ");
+					Serial.printf("> ");
 					return 0;
 				}
 			}
 		}
 		if(strcmp(argv[0],"list") == 0){
 			if(CMDS != NULL){
-				printf("Added commands:\r\n");
+				Serial.printf("Added commands:\r\n");
 				for(unsigned int i = 0; i < CMDS_size; i++){
-					printf("  %s : %s\r\n",CMDS[i].cmd,CMDS[i].desc);
+					Serial.printf("  %s : %s\r\n",CMDS[i].cmd,CMDS[i].desc);
 				}
 			}
-			printf("Default commands:\r\n");
-			printf("  list : Lists the commands\r\n");
+			Serial.printf("Default commands:\r\n");
+			Serial.printf("  list : Lists the commands\r\n");
 			for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
-				printf("  %s : %s\r\n",def_cmds[i].cmd,def_cmds[i].desc);
+				Serial.printf("  %s : %s\r\n",def_cmds[i].cmd,def_cmds[i].desc);
 			}
-			printf("> ");
+			Serial.printf("> ");
 			return 0;
 		}
 
 		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 			if(strcmp(def_cmds[i].cmd,argv[0]) == 0){
 				def_cmds[i].func(argc,argv);
-				printf("> ");
+				Serial.printf("> ");
 				return 0;
 			}
 		}
 		if(argv[0] == NULL){
-			printf("> ");
+			Serial.printf("> ");
 			return 0;
 		}
-		printf("%s not found\r\n",argv[0]);
-		printf("> ");
+		Serial.printf("%s not found\r\n",argv[0]);
+		Serial.printf("> ");
 		return -1;
 	}
 	return 0;
 }
 
-void init(void){
+void MicroShell_c::init(void){
 	Serial.println("MicroShell");
 	Serial.print("> ");
 }
@@ -163,39 +154,43 @@ void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
 	if(match_cnt == 1){
 		strcpy((char*)G_cmd,matches[match]);
 		G_cmd_pos = strlen(G_cmd);
-		printf("\r> %s\033[J",G_cmd);
+		Serial.printf("\r> %s\033[J",G_cmd);
 		return;
 	}
-	printf("\033[s\r\n\033[K");
+	Serial.printf("\033[s\r\n\033[K");
 	for(int i = 0; i < matches_size; i++){
-		printf("%s\t",matches[i]);
+		Serial.printf("%s\t",matches[i]);
 	}
-	printf("\033[u");
+	Serial.printf("\033[u");
 }
 
-int acquire(cmd_t CMDS[], unsigned int CMDS_size){
+int MicroShell_c::acquire(cmd_t CMDS[], unsigned int CMDS_size){
+	#ifndef WITH_IRQ
+	if(Serial.available()){
+	#endif
 	static short unsigned int arrow = 2;
 	char c;
-	scanf("%c",&c);
+	c = Serial.read();
+	Serial.print(c);
 	if(arrow == 0){
 		arrow = 2;
 		switch(c){
 			case 'A':
-				printf("\033[B");
+				Serial.printf("\033[B");
 				strcpy((char*)G_cmd,(char*)G_history[G_history_pos]);
 				G_history_pos = (((G_history_pos-1)%((G_history_size-1))) == -1)?G_history_size-1:((G_history_pos-1)%((G_history_size-1)));
 				G_cmd_pos = strlen((char*)G_cmd);
-				printf("\r\033[K> %s",G_cmd);
+				Serial.printf("\r\033[K> %s",G_cmd);
 				break;
 			case 'B':
-				printf("\033[A");
+				Serial.printf("\033[A");
 				G_history_pos = (G_history_pos+1)%G_history_size;
 				strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
 				G_cmd_pos = strlen((char *)G_cmd);
-				printf("\r\033[K> %s",G_cmd);
+				Serial.printf("\r\033[K> %s",G_cmd);
 				break;
 			default:
-				printf("\r\nunused escape sequence detected\r\n");
+				Serial.printf("\r\nunused escape sequence detected\r\n");
 				break;
 		}
 		return 0;
@@ -203,10 +198,15 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 	switch(c){
 		case '\r':
 			ENTER:  // No need to rewrite this for \n since we can use a goto
+			if(G_cmd_pos == 0){
+				Serial.println();
+				Serial.print("> ");
+				return 0;
+			}
 			G_cmd[G_cmd_pos++] = ' ';
 			G_cmd[G_cmd_pos] = '\0';
 			G_cmd_pos = 0;
-			printf("\r\n");
+			Serial.println();
 			G_cmd_run = 1;
 			if(strlen((char *)G_cmd) != 0){               
 				strcpy((char *)G_history[G_history_size], (char *)G_cmd);
@@ -214,7 +214,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				G_history_pos = G_history_size-1;
 			}
 			if(CMDS != NULL){
-				char *cmd = "0";
+				char *cmd;
 				char *cmd0;
 				strcpy(cmd, G_cmd);
 				cmd0 = strtok(cmd," ");
@@ -232,10 +232,10 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			goto ENTER;
 			break;
 		case '\t':
-			printf("\r\033[%dC",G_cmd_pos+2);
+			Serial.printf("\r\033[%dC",G_cmd_pos+2);
 			if(G_cmd_pos == 0){
 				strcpy(G_cmd,"list");
-				printf("\r");
+				Serial.printf("\r");
 				G_cmd_run = 1;
 				return 0;
 			}
@@ -243,10 +243,11 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			autocomplete(CMDS,CMDS_size);
 			break;
 		case '\177':
+			Serial.printf("\b\e[K");
 			G_cmd[G_cmd_pos--] = '\0';
 			if(G_cmd_pos < 0){
 				G_cmd_pos = 0;
-				printf("\r\033[2C");
+				Serial.printf("\r\033[2C");
 			}
 			break;
 		case '\033':
@@ -261,10 +262,13 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			G_cmd[G_cmd_pos] = c;
 			G_cmd_pos = (G_cmd_pos+1)%MICROSHELL_MAX_CMD;
 			if(G_cmd_pos == 0){
-				printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
+				Serial.printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
 			}
-			//printf("c value:%d\r\n",c);
+			//Serial.printf("c value:%d\r\n",c);
 			break;
 	}
+	#ifndef WITH_IRQ
+	}
+	#endif
 	return 0;
 }

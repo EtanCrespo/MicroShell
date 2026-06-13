@@ -1,5 +1,4 @@
-#ifndef MICROSHELL_H
-#define MICROSHELL_H
+#pragma once
 
 #ifndef MICROSHELL_MAX_CMD
 #define MICROSHELL_MAX_CMD (64)
@@ -19,12 +18,11 @@ typedef struct{
 	const char *desc;
 } cmd_t;
 
-typedef struct{
-	void(*init)(void);
-	int(*acquire)(cmd_t CMDS[], unsigned int CMDS_size);
-	int(*run)(cmd_t CMDS[], unsigned int CMDS_size);
-} MicroShell_t;
+class MicroShell_c{
+	public:
+		void init(void);
+		int acquire(cmd_t CMDS[], unsigned int CMDS_size);
+		int run(cmd_t CMDS[], unsigned int CMDS_size);
+};
 
-extern MicroShell_t MicroShell;
-
-#endif
+static MicroShell_c MicroShell;
