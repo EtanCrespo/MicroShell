@@ -170,110 +170,106 @@ void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
 }
 
 int MicroShell_c::acquire(cmd_t CMDS[], unsigned int CMDS_size){
-	#ifndef WITH_IRQ
 	if(Serial.available()){
-	#endif
-	static short unsigned int arrow = 2;
-	char c;
-	c = Serial.read();
-	Serial.print(c);
-	if(arrow == 0){
-		arrow = 2;
-		switch(c){
-			case 'A':
-				Serial.printf("\033[B");
-				strcpy((char*)G_cmd,(char*)G_history[G_history_pos]);
-				G_history_pos = (((G_history_pos-1)%((G_history_size-1))) == -1)?G_history_size-1:((G_history_pos-1)%((G_history_size-1)));
-				G_cmd_pos = strlen((char*)G_cmd);
-				Serial.printf("\r\033[K> %s",G_cmd);
-				break;
-			case 'B':
-				Serial.printf("\033[A");
-				G_history_pos = (G_history_pos+1)%G_history_size;
-				strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
-				G_cmd_pos = strlen((char *)G_cmd);
-				Serial.printf("\r\033[K> %s",G_cmd);
-				break;
-			default:
-				Serial.printf("\r\nunused escape sequence detected\r\n");
-				break;
+		static short unsigned int arrow = 2;
+		char c;
+		c = Serial.read();
+		Serial.print(c);
+		if(arrow == 0){
+			arrow = 2;
+			switch(c){
+				case 'A':
+					Serial.printf("\033[B");
+					strcpy((char*)G_cmd,(char*)G_history[G_history_pos]);
+					G_history_pos = (((G_history_pos-1)%((G_history_size-1))) == -1)?G_history_size-1:((G_history_pos-1)%((G_history_size-1)));
+					G_cmd_pos = strlen((char*)G_cmd);
+					Serial.printf("\r\033[K> %s",G_cmd);
+					break;
+				case 'B':
+					Serial.printf("\033[A");
+					G_history_pos = (G_history_pos+1)%G_history_size;
+					strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
+					G_cmd_pos = strlen((char *)G_cmd);
+					Serial.printf("\r\033[K> %s",G_cmd);
+					break;
+				default:
+					Serial.printf("\r\nunused escape sequence detected\r\n");
+					break;
+			}
+			return 0;
 		}
-		return 0;
-	}
-	switch(c){
-		case '\r':
-			ENTER:  // No need to rewrite this for \n since we can use a goto
-			if(G_cmd_pos == 0){
+		switch(c){
+			case '\r':
+				ENTER:  // No need to rewrite this for \n since we can use a goto
+				if(G_cmd_pos == 0){
+					Serial.println();
+					Serial.print("> ");
+					return 0;
+				}
+				G_cmd[G_cmd_pos++] = ' ';
+				G_cmd[G_cmd_pos] = '\0';
+				G_cmd_pos = 0;
 				Serial.println();
-				Serial.print("> ");
-				return 0;
-			}
-			G_cmd[G_cmd_pos++] = ' ';
-			G_cmd[G_cmd_pos] = '\0';
-			G_cmd_pos = 0;
-			Serial.println();
-			G_cmd_run = 1;
-			if(strlen((char *)G_cmd) != 0){               
-				strcpy((char *)G_history[G_history_size], (char *)G_cmd);
-				G_history_size = (G_history_size+1)%MICROSHELL_MAX_HISTORY_SIZE;
-				G_history_pos = G_history_size-1;
-			}
-			if(CMDS != NULL){
-				char *cmd;
-				char *cmd0;
-				strcpy(cmd, G_cmd);
-				cmd0 = strtok(cmd," ");
-				if(strcmp(cmd0,"reboot") == 0){
-					for(unsigned int i = 0; i < CMDS_size; i++){
-						if(strcmp(CMDS[i].cmd,cmd0) == 0){
-							CMDS[i].func(1,&cmd0);
-							return 0;
+				G_cmd_run = 1;
+				if(strlen((char *)G_cmd) != 0){               
+					strcpy((char *)G_history[G_history_size], (char *)G_cmd);
+					G_history_size = (G_history_size+1)%MICROSHELL_MAX_HISTORY_SIZE;
+					G_history_pos = G_history_size-1;
+				}
+				if(CMDS != NULL){
+					char *cmd;
+					char *cmd0;
+					strcpy(cmd, G_cmd);
+					cmd0 = strtok(cmd," ");
+					if(strcmp(cmd0,"reboot") == 0){
+						for(unsigned int i = 0; i < CMDS_size; i++){
+							if(strcmp(CMDS[i].cmd,cmd0) == 0){
+								CMDS[i].func(1,&cmd0);
+								return 0;
+							}
 						}
 					}
 				}
-			}
-			break;
-		case '\n':
-			goto ENTER;
-			break;
-		case '\t':
-			Serial.printf("\r\033[%dC",G_cmd_pos+2);
-			if(G_cmd_pos == 0){
-				strcpy(G_cmd,"list");
-				Serial.printf("\r");
-				G_cmd_run = 1;
-				return 0;
-			}
-			G_cmd[G_cmd_pos] = '\0';
-			autocomplete(CMDS,CMDS_size);
-			break;
-		case '\177':
-			Serial.printf("\b\e[K");
-			G_cmd[G_cmd_pos--] = '\0';
-			if(G_cmd_pos < 0){
-				G_cmd_pos = 0;
-				Serial.printf("\r\033[2C");
-			}
-			break;
-		case '\033':
-			arrow--;
-			break;
-		case '[':
-			if(arrow == 1){
+				break;
+			case '\n':
+				goto ENTER;
+				break;
+			case '\t':
+				Serial.printf("\r\033[%dC",G_cmd_pos+2);
+				if(G_cmd_pos == 0){
+					strcpy(G_cmd,"list");
+					Serial.printf("\r");
+					G_cmd_run = 1;
+					return 0;
+				}
+				G_cmd[G_cmd_pos] = '\0';
+				autocomplete(CMDS,CMDS_size);
+				break;
+			case '\177':
+				Serial.printf("\b\e[K");
+				G_cmd[G_cmd_pos--] = '\0';
+				if(G_cmd_pos < 0){
+					G_cmd_pos = 0;
+					Serial.printf("\r\033[2C");
+				}
+				break;
+			case '\033':
 				arrow--;
-			}
-			break;
-		default:
-			G_cmd[G_cmd_pos] = c;
-			G_cmd_pos = (G_cmd_pos+1)%MICROSHELL_MAX_CMD;
-			if(G_cmd_pos == 0){
-				Serial.printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
-			}
-			//Serial.printf("c value:%d\r\n",c);
-			break;
+				break;
+			case '[':
+				if(arrow == 1){
+					arrow--;
+				}
+				break;
+			default:
+				G_cmd[G_cmd_pos] = c;
+				G_cmd_pos = (G_cmd_pos+1)%MICROSHELL_MAX_CMD;
+				if(G_cmd_pos == 0){
+					Serial.printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
+				}
+				//Serial.printf("c value:%d\r\n",c);
+				break;
+		}
 	}
-	#ifndef WITH_IRQ
-	}
-	#endif
 	return 0;
 }
