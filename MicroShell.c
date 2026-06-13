@@ -23,6 +23,7 @@ char G_history[MICROSHELL_MAX_HISTORY_SIZE][MICROSHELL_MAX_CMD];
 int G_history_size = 0;
 int G_history_pos = 0;
 short unsigned int G_cmd_run = 0;
+short unsigned int G_from_history = 0;
 
 int cmd_clear(int argc, char **argv);
 int cmd_history(int argc, char **argv);
@@ -50,6 +51,7 @@ int cmd_history(int argc, char **argv){
 		}
 		else if(atoi(argv[1]) > 0 && atoi(argv[1]) <G_history_size){
 			strcpy((char*)G_cmd,G_history[atoi(argv[1])-1]);
+			G_from_history = 1;
 			G_cmd_run = 1;
 		}
 	}
@@ -99,7 +101,10 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 			if(strcmp(def_cmds[i].cmd,argv[0]) == 0){
 				def_cmds[i].func(argc,argv);
-				printf("> ");
+				if(G_from_history == 0){
+					printf("> ");
+				}
+				G_from_history = 0;
 				return 0;
 			}
 		}
@@ -172,11 +177,12 @@ void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
 }
 
 int acquire(cmd_t CMDS[], unsigned int CMDS_size){
-	static short unsigned int arrow = 2;
+	static short unsigned int ESC = 2;
 	char c;
 	scanf("%c",&c);
-	if(arrow == 0){
-		arrow = 2;
+	if(ESC == 0){
+		ESC = 2;
+		static short unsigned int F = 0;
 		switch(c){
 			case 'A':
 				printf("\033[B");
@@ -192,8 +198,42 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				G_cmd_pos = strlen((char *)G_cmd);
 				printf("\r\033[K> %s",G_cmd);
 				break;
+			case 'C':
+
+	/*
+			case '1':
+				if(F == 0){
+					F = 1;
+					ESC = 0;
+					return 0;
+				}
+				else if(F == 1){
+					F = 0;
+					printf("F1 pressed\r\n");
+				}
+				else if(F == 2){
+					F = 0;
+					printf("F10 pressed\r\n");
+				}
+				break;
+			case '2':
+				if(F == 0){
+					F = 2;
+					ESC = 0;
+					return 0;
+				}
+				else if(F == 1){
+					F = 0;
+					printf("F2 pressed\r\n");
+				}
+				else if(F == 2){
+					F = 0;
+					printf("F11 pressed\r\n");
+				}
+				break;
+	*/
 			default:
-				printf("\r\nunused escape sequence detected\r\n");
+				printf("\r\nunused escape sequence detected (e[%d)\r\n",c);
 				break;
 		}
 		return 0;
@@ -248,11 +288,11 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			}
 			break;
 		case '\033':
-			arrow--;
+			ESC--;
 			break;
 		case '[':
-			if(arrow == 1){
-				arrow--;
+			if(ESC == 1){
+				ESC--;
 			}
 			break;
 		default:
