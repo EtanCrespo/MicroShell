@@ -1,7 +1,8 @@
 #include "MicroShell.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <Arduino.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
 
 #ifdef NO_ECHO
 	void _scanf(char *str, char*c){
@@ -115,7 +116,8 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 }
 
 void init(void){
-	printf("MicroShell\r\n> ");
+	Serial.println("MicroShell");
+	Serial.print("> ");
 }
 
 void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
