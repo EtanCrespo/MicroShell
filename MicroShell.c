@@ -3,13 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef NO_ECHO
-	void _scanf(char *str, char*c){
-		scanf("%c",c);
-		printf("%c",*c);
-	}
-	#define scanf(str,c) _scanf(str,c)
-#endif
 
 void init(void);
 int acquire(cmd_t CMDS[], unsigned int CMDS_size);
@@ -185,14 +178,12 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 		static short unsigned int F = 0;
 		switch(c){
 			case 'A':
-				printf("\033[B");
 				strcpy((char*)G_cmd,(char*)G_history[G_history_pos]);
 				G_history_pos = (((G_history_pos-1)%((G_history_size-1))) == -1)?G_history_size-1:((G_history_pos-1)%((G_history_size-1)));
 				G_cmd_pos = strlen((char*)G_cmd);
 				printf("\r\033[K> %s",G_cmd);
 				break;
 			case 'B':
-				printf("\033[A");
 				G_history_pos = (G_history_pos+1)%G_history_size;
 				strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
 				G_cmd_pos = strlen((char *)G_cmd);
@@ -270,7 +261,6 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			goto ENTER;
 			break;
 		case '\t':
-			printf("\r\033[%dC",G_cmd_pos+2);
 			if(G_cmd_pos == 0){
 				strcpy(G_cmd,"list");
 				printf("\r");
@@ -284,8 +274,8 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			G_cmd[G_cmd_pos--] = '\0';
 			if(G_cmd_pos < 0){
 				G_cmd_pos = 0;
-				printf("\r\033[2C");
 			}
+			printf("\b\033[K");
 			break;
 		case '\033':
 			ESC--;
@@ -294,6 +284,9 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			if(ESC == 1){
 				ESC--;
 			}
+			else{
+				printf("[");
+			}
 			break;
 		default:
 			G_cmd[G_cmd_pos] = c;
@@ -301,6 +294,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			if(G_cmd_pos == 0){
 				printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
 			}
+			printf("%c",c);
 			//printf("c value:%d\r\n",c);
 			break;
 	}
