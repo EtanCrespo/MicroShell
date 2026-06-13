@@ -21,6 +21,7 @@ int cmd_clear(int argc, char **argv);
 int cmd_history(int argc, char **argv);
 
 const cmd_t def_cmds[] ={
+	{"list", NULL, "Lists the commands"},
 	{"clear", cmd_clear, "Clears the screen"},
 	{"history", cmd_history, "Prints the history"},
 };
@@ -82,7 +83,6 @@ int MicroShell_c::run(cmd_t CMDS[], unsigned int CMDS_size){
 				}
 			}
 			Serial.printf("Default commands:\r\n");
-			Serial.printf("  list : Lists the commands\r\n");
 			for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 				Serial.printf("  %s : %s\r\n",def_cmds[i].cmd,def_cmds[i].desc);
 			}
@@ -90,7 +90,7 @@ int MicroShell_c::run(cmd_t CMDS[], unsigned int CMDS_size){
 			return 0;
 		}
 
-		for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
+		for(unsigned int i = 1; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
 			if(strcmp(def_cmds[i].cmd,argv[0]) == 0){
 				def_cmds[i].func(argc,argv);
 				if(G_from_history == 0){
