@@ -234,14 +234,14 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			ENTER:  // No need to rewrite this for \n since we can use a goto
 			G_cmd[G_cmd_pos++] = ' ';
 			G_cmd[G_cmd_pos] = '\0';
-			G_cmd_pos = 0;
 			printf("\r\n");
 			G_cmd_run = 1;
-			if(strlen((char *)G_cmd) != 0){               
+			if(G_cmd_pos != 1){               
 				strcpy((char *)G_history[G_history_size], (char *)G_cmd);
 				G_history_size = (G_history_size+1)%MICROSHELL_MAX_HISTORY_SIZE;
 				G_history_pos = G_history_size-1;
 			}
+			G_cmd_pos = 0;
 			if(CMDS != NULL){
 				char *cmd = "0";
 				char *cmd0;
