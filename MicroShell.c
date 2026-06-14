@@ -72,7 +72,7 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 				break;
 			}
 		}
-		if(CMDS != NULL){
+		if(CMDS != NULL || CMDS_size != 0){
 			for(unsigned int i = 0; i < CMDS_size; i++){
 				if(strcmp(CMDS[i].cmd,argv[0]) == 0){
 					CMDS[i].func(argc,argv);
@@ -82,7 +82,7 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 			}
 		}
 		if(strcmp(argv[0],"list") == 0){
-			if(CMDS != NULL){
+			if(CMDS != NULL || CMDS_size != 0){
 				printf("Added commands:\r\n");
 				for(unsigned int i = 0; i < CMDS_size; i++){
 					printf("  %s : %s\r\n",CMDS[i].cmd,CMDS[i].desc);
@@ -124,10 +124,13 @@ void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
 	int match_cnt = 0;
 	// Used only when there's one match
 	int match = 0;
-	for(unsigned int i = 0; i < CMDS_size; i++){
-		if(G_cmd[0] == CMDS[i].cmd[0]){
-			strcpy((char*)matches[matches_size++],CMDS[i].cmd);
-			match_cnt++;
+	// We prevent any arror when we only have default commands
+	if(CMDS != NULL || CMDS_size != 0){
+		for(unsigned int i = 0; i < CMDS_size; i++){
+			if(G_cmd[0] == CMDS[i].cmd[0]){
+				strcpy((char*)matches[matches_size++],CMDS[i].cmd);
+				match_cnt++;
+			}
 		}
 	}
 
@@ -258,7 +261,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				G_history_pos = G_history_size-1;
 			}
 			G_cmd_pos = 0;
-			if(CMDS != NULL){
+			if(CMDS != NULL || CMDS_size != 0){
 				char *cmd = "0";
 				char *cmd0;
 				strcpy(cmd, G_cmd);
