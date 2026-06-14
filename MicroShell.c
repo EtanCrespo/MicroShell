@@ -272,11 +272,13 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			autocomplete(CMDS,CMDS_size);
 			break;
 		case '\177':
+			if(G_cmd_pos > 0){
+				printf("\b\033[K");
+			}
 			G_cmd[G_cmd_pos--] = '\0';
 			if(G_cmd_pos < 0){
 				G_cmd_pos = 0;
 			}
-			printf("\b\033[K");
 			break;
 		case '\033':
 			ESC--;
