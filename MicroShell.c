@@ -56,7 +56,12 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 	if(G_cmd_run == 1){
 		G_cmd_run = 0;
 		char *argv[MICROSHELL_MAX_ARGS];
+		int cmd_len = strlen(G_cmd);
 		argv[0] = strtok(G_cmd," ");
+		if((argv[0] == NULL) || (cmd_len <= 1)){
+			printf("> ");
+			return 0;
+		}
 		int argc = 1;
 		char *arg;
 		arg = strtok(NULL," ");
@@ -100,10 +105,6 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 				G_from_history = 0;
 				return 0;
 			}
-		}
-		if(argv[0] == NULL){
-			printf("> ");
-			return 0;
 		}
 		printf("%s not found\r\n",argv[0]);
 		printf("> ");
