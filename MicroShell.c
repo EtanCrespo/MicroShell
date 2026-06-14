@@ -182,10 +182,19 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			case 'A':
 				strcpy((char*)G_cmd,(char*)G_history[G_history_pos]);
 				G_history_pos = (((G_history_pos-1)%((G_history_size-1))) == -1)?G_history_size-1:((G_history_pos-1)%((G_history_size-1)));
+				if(G_history_pos == G_history_size-1){
+					G_history_pos = 0;
+				}
 				G_cmd_pos = strlen((char*)G_cmd);
 				printf("\r\033[K> %s",G_cmd);
 				break;
 			case 'B':
+				if(G_history_pos == G_history_size-1){
+					G_cmd_pos = 0;
+					strcpy(G_cmd,"");
+					printf("\r\033[K> ");
+					return 0;
+				}
 				G_history_pos = (G_history_pos+1)%G_history_size;
 				strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
 				G_cmd_pos = strlen((char *)G_cmd);
