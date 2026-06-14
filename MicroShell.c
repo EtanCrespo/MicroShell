@@ -43,7 +43,7 @@ int cmd_history(int argc, char **argv){
 		if(strcmp(argv[1],"clear") == 0){
 			G_history_size = 0;
 		}
-		else if(atoi(argv[1]) > 0 && atoi(argv[1]) <G_history_size){
+		else if(atoi(argv[1]) > 0 && atoi(argv[1]) < G_history_size){
 			strcpy((char*)G_cmd,G_history[atoi(argv[1])-1]);
 			G_from_history = 1;
 			G_cmd_run = 1;
@@ -172,6 +172,7 @@ void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
 }
 
 int acquire(cmd_t CMDS[], unsigned int CMDS_size){
+	// Static variable to detect when an escape sequence is scanned
 	static short unsigned int ESC = 2;
 	char c;
 	scanf("%c",&c);
@@ -179,8 +180,10 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 		ESC = 2;
 		static short unsigned int F = 0;
 		switch(c){
+			// Beginning of arrow detection
 			case 'A':
 				strcpy((char*)G_cmd,(char*)G_history[G_history_pos]);
+				// We decrement when we go up since we use a simple list where index 0 is the oldest command and ...size-1 is the latest
 				G_history_pos = (((G_history_pos-1)%((G_history_size-1))) == -1)?G_history_size-1:((G_history_pos-1)%((G_history_size-1)));
 				if(G_history_pos == G_history_size-1){
 					G_history_pos = 0;
@@ -195,13 +198,14 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 					printf("\r\033[K> ");
 					return 0;
 				}
+				// Same logic here
 				G_history_pos = (G_history_pos+1)%G_history_size;
 				strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
 				G_cmd_pos = strlen((char *)G_cmd);
 				printf("\r\033[K> %s",G_cmd);
 				break;
-			case 'C':
-
+			// Ending of arrow detection
+			// Beginning of function keys detection
 	/*
 			case '1':
 				if(F == 0){
@@ -234,6 +238,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				}
 				break;
 	*/
+			// Ending of function keys detection
 			default:
 				printf("\r\nunused escape sequence detected (e[%d)\r\n",c);
 				break;
@@ -271,6 +276,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 		case '\n':
 			goto ENTER;
 			break;
+		// Tab case, used to handle autocomplete
 		case '\t':
 			if(G_cmd_pos == 0){
 				strcpy(G_cmd,"list");
@@ -281,6 +287,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			G_cmd[G_cmd_pos] = '\0';
 			autocomplete(CMDS,CMDS_size);
 			break;
+		// Backspace case
 		case '\177':
 			if(G_cmd_pos > 0){
 				printf("\b\033[K");
@@ -290,24 +297,29 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				G_cmd_pos = 0;
 			}
 			break;
+		// Escape sequence detection begin
 		case '\033':
 			ESC--;
 			break;
+		// Escape sequence introducer, we still wnat it to be taken into account for a command when not in an escape sequence
 		case '[':
 			if(ESC == 1){
 				ESC--;
 			}
 			else{
-				printf("[");
+				goto DEFAULT;
 			}
 			break;
+		// Default case to handle all characters
 		default:
+			DEFAULT:
 			G_cmd[G_cmd_pos] = c;
 			G_cmd_pos = (G_cmd_pos+1)%MICROSHELL_MAX_CMD;
 			if(G_cmd_pos == 0){
 				printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
 			}
 			printf("%c",c);
+			// Printf for debug purposes
 			//printf("c value:%d\r\n",c);
 			break;
 	}
