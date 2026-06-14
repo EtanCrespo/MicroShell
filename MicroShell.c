@@ -108,6 +108,7 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 		}
 		printf("%s not found\r\n",argv[0]);
 		printf("> ");
+		G_history_size = ((G_history_size-1)<0)?0:G_history_size-1;
 		return -1;
 	}
 	return 0;
