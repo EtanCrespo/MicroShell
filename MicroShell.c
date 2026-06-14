@@ -123,7 +123,7 @@ void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
 	int matches_size = 0;
 	int match_cnt = 0;
 	// Used only when there's one match
-	int match;
+	int match = 0;
 	for(unsigned int i = 0; i < CMDS_size; i++){
 		if(G_cmd[0] == CMDS[i].cmd[0]){
 			strcpy((char*)matches[matches_size++],CMDS[i].cmd);
