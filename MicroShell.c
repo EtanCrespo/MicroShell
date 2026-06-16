@@ -191,8 +191,8 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				if(G_history_pos == G_history_size-1){
 					G_history_pos = 0;
 				}
-				G_cmd_pos = strlen((char*)G_cmd);
-				printf("\r\033[K> %s",G_cmd);
+				G_cmd_pos = strlen((char*)G_cmd)-1;
+				printf("\r\033[K> %s\b",G_cmd);
 				break;
 			case 'B':
 				if(G_history_pos == G_history_size-1){
@@ -204,8 +204,8 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				// Same logic here
 				G_history_pos = (G_history_pos+1)%G_history_size;
 				strcpy((char *)G_cmd,(char *)G_history[G_history_pos]);
-				G_cmd_pos = strlen((char *)G_cmd);
-				printf("\r\033[K> %s",G_cmd);
+				G_cmd_pos = strlen((char *)G_cmd)-1;
+				printf("\r\033[K> %s\b",G_cmd);
 				break;
 			// Ending of arrow detection
 			// Beginning of function keys detection
