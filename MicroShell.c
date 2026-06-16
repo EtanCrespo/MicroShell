@@ -28,7 +28,7 @@ const cmd_t def_cmds[] ={
 };
 
 int cmd_clear(int argc, char **argv){
-	printf("\033[2J\033[0;0H\r\n");
+	printf("\033[2J\033[0;0H");
 	return 0;
 }
 
