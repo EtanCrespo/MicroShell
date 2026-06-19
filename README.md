@@ -2,7 +2,7 @@
 
 This is a simple Shell written in C using standard libraries.
 
-To use it just include ```MicroShell.h``` int your main.
+To use it just include ```MicroShell.h``` in your main.
 
 ## Functions
 
