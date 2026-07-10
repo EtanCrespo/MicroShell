@@ -9,6 +9,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size);
 int run_cmd(cmd_t CMDS[], unsigned int CMDS_size);
 
 MicroShell_t MicroShell = {init, acquire, run_cmd};
+char F1[] = "";
 
 char G_cmd[MICROSHELL_MAX_CMD];
 int G_cmd_pos = 0;
@@ -177,6 +178,7 @@ void autocomplete(cmd_t CMDS[], unsigned int CMDS_size){
 int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 	// Static variable to detect when an escape sequence is scanned
 	static short unsigned int ESC = 2;
+	static short unsigned int Fn_f = 0;
 	char c;
 	scanf("%c",&c);
 	if(ESC == 0){
@@ -209,7 +211,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				break;
 			// Ending of arrow detection
 			// Beginning of function keys detection
-	/*
+	
 			case '1':
 				if(F == 0){
 					F = 1;
@@ -218,7 +220,11 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 				}
 				else if(F == 1){
 					F = 0;
-					printf("F1 pressed\r\n");
+					Fn_f = 1;
+					strcpy(G_cmd, F1);
+					printf("\r> %s", G_cmd);
+					G_cmd_pos = strlen(G_cmd);
+					goto ENTER;
 				}
 				else if(F == 2){
 					F = 0;
@@ -240,10 +246,10 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 					printf("F11 pressed\r\n");
 				}
 				break;
-	*/
+	
 			// Ending of function keys detection
 			default:
-				printf("\r\nunused escape sequence detected (e[%d)\r\n",c);
+				// printf("\r\nunused escape sequence detected (e[%d)\r\n",c);
 				break;
 		}
 		return 0;
@@ -304,10 +310,19 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 		case '\033':
 			ESC--;
 			break;
-		// Escape sequence introducer, we still wnat it to be taken into account for a command when not in an escape sequence
+		// Escape sequence introducer, we still want it to be taken into account for a command when not in an escape sequence
 		case '[':
 			if(ESC == 1){
 				ESC--;
+			}
+			else{
+				goto DEFAULT;
+			}
+			break;
+		case '~':
+			if(Fn_f){
+				Fn_f = 0;
+				break;
 			}
 			else{
 				goto DEFAULT;
@@ -319,11 +334,11 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 			G_cmd[G_cmd_pos] = c;
 			G_cmd_pos = (G_cmd_pos+1)%MICROSHELL_MAX_CMD;
 			if(G_cmd_pos == 0){
-				printf("\r\n/!\\ Max sie of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
+				printf("\r\n/!\\ Max size of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
 			}
 			printf("%c",c);
 			// Printf for debug purposes
-			//printf("c value:%d\r\n",c);
+			// printf("c value:%d\r\n",c);
 			break;
 	}
 	return 0;

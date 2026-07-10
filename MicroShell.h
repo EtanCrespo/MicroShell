@@ -27,4 +27,6 @@ typedef struct{
 
 extern MicroShell_t MicroShell;
 
+extern char __attribute__((weak)) F1[];
+
 #endif
