@@ -23,7 +23,7 @@ int cmd_clear(int argc, char **argv);
 int cmd_history(int argc, char **argv);
 
 const cmd_t def_cmds[] ={
-	{"list", NULL, "Lists the commands"},
+	{"help", NULL, "Lists the commands"},
 	{"clear", cmd_clear, "Clears the screen"},
 	{"history", cmd_history, "Prints the history"},
 };
@@ -82,7 +82,7 @@ int run_cmd(cmd_t CMDS[], unsigned int CMDS_size){
 				}
 			}
 		}
-		if(strcmp(argv[0],"list") == 0){
+		if(strcmp(argv[0],"help") == 0){
 			if(CMDS != NULL || CMDS_size != 0){
 				printf("Added commands:\r\n");
 				for(unsigned int i = 0; i < CMDS_size; i++){
@@ -288,7 +288,7 @@ int acquire(cmd_t CMDS[], unsigned int CMDS_size){
 		// Tab case, used to handle autocomplete
 		case '\t':
 			if(G_cmd_pos == 0){
-				strcpy(G_cmd,"list");
+				strcpy(G_cmd,"help");
 				printf("\r");
 				G_cmd_run = 1;
 				return 0;
