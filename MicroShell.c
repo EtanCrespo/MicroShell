@@ -3,16 +3,19 @@
 #include <string.h>
 #include <stdlib.h>
 
+enum {No_ESC = 0, Any_ESC, Fn_ESC1, Fn_ESC2};
 
-char F1[] = "";
+#define def_cmd(func) int func(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv)
 
-int cmd_help(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv);
-int cmd_clear(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv);
-int cmd_history(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv);
+// int cmd_help(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv);
+def_cmd(cmd_help);
+def_cmd(cmd_clear);
+def_cmd(cmd_shortcuts);
+def_cmd(cmd_history);
 
 typedef struct{
 	const char *cmd;
-	int(*func)(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc,char** argv);
+	def_cmd((*func));
 	const char *desc;
 } def_cmd_t;
 
@@ -20,10 +23,11 @@ typedef struct{
 const def_cmd_t def_cmds[] ={
 	{"help", cmd_help, "Lists the commands"},
 	{"clear", cmd_clear, "Clears the screen"},
+	{"shortcuts", cmd_shortcuts, "Prints your shortcuts"},
 	{"history", cmd_history, "Prints the history"}
 };
 
-int cmd_help(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv){
+def_cmd(cmd_help){
 	if(CMDS != NULL || CMDS_size != 0){
 		MS->sends("Added commands:\r\n");
 		for(unsigned int i = 0; i < CMDS_size; i++){
@@ -45,12 +49,12 @@ int cmd_help(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, c
 	return 0;
 }
 
-int cmd_clear(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv){
+def_cmd(cmd_clear){
 	MS->sends("\033[2J\033[0;0H");
 	return 0;
 }
 
-int cmd_history(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv){
+def_cmd(cmd_history){
 	if(argc == 1){
 		MS->sends("History:\r\n");
 		for(int i = 0; i < MS->history_size; i++){
@@ -72,6 +76,19 @@ int cmd_history(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc
 			MS->from_history = 1;
 			MS->state_n = MS_RUN;
 		}
+	}
+	return 0;
+}
+
+def_cmd(cmd_shortcuts){
+	for(int i = 0; i < 12; i++){
+		MS->sends("  F");
+		char h_index[9];
+		sprintf(h_index, "%d", i+1);
+		MS->sends(h_index);
+		MS->sends(" : ");
+		MS->sends(MS->F[i]);
+		MS->sends("\r\n");
 	}
 	return 0;
 }
@@ -141,9 +158,7 @@ void MS_init(MicroShell_t *MS){
 	MS->history_size = 0;
 	MS->history_pos = 0;
 	MS->from_history = 0;
-	MS->ESC = 2;
-	MS->Fn_f = 0;
-	MS->F = 0;
+	MS->ESC_f = No_ESC;
 	MS->sends("MicroShell\r\n> ");
 }
 
@@ -175,7 +190,7 @@ int MS_run(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 		}
 	}
 
-	for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(cmd_t); i++){
+	for(unsigned int i = 0; i < sizeof(def_cmds)/sizeof(def_cmd_t); i++){
 		if(strcmp(def_cmds[i].cmd, argv[0]) == 0){
 			def_cmds[i].func(MS, CMDS, CMDS_size, argc , argv);
 			if(MS->from_history == 0){
@@ -212,182 +227,287 @@ void MicroShell(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 	}
 }
 
+int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
+	char c = MS->getc();
+	switch(MS->ESC_f){
+		case No_ESC:
+			switch(c){
+				case '\r':
+					ENTER:  // No need to rewrite this for \n since we can use a goto
+					MS->cmd[MS->cmd_pos++] = ' ';
+					MS->cmd[MS->cmd_pos] = '\0';
+					MS->sends("\r\n");
+					MS->state_n = MS_RUN;
+					if(MS->cmd_pos != 1){               
+						strcpy((char *)MS->history[MS->history_size], (char *)MS->cmd);
+						MS->history_size = (MS->history_size+1)%MICROSHELL_MAX_HISTORY_SIZE;
+						MS->history_pos = MS->history_size-1;
+					}
+					MS->cmd_pos = 0;
+					if(CMDS != NULL || CMDS_size != 0){
+						char *cmd = "0";
+						char *cmd0;
+						strcpy(cmd, MS->cmd);
+						cmd0 = strtok(cmd," ");
+						if(strcmp(cmd0,"reboot") == 0){
+							for(unsigned int i = 0; i < CMDS_size; i++){
+								if(strcmp(CMDS[i].cmd,cmd0) == 0){
+									CMDS[i].func(1,&cmd0);
+									return 0;
+								}
+							}
+						}
+					}
+					return 0;
+					break;
+				case '\n':
+					goto ENTER;
+					break;
+				// Tab case, used to handle autocomplete
+				case '\t':
+					if(MS->cmd_pos == 0){
+						strcpy(MS->cmd,"help");
+						MS->sends("\r");
+						MS->state_n = MS_RUN;
+						return 0;
+					}
+					MS->cmd[MS->cmd_pos] = '\0';
+					MS_autocomplete(MS, CMDS, CMDS_size);
+					return 0;
+					break;
+				// Backspace case
+				case '\177':
+					if(MS->cmd_pos > 0){
+						MS->sends("\b\033[K");
+					}
+					MS->cmd[MS->cmd_pos--] = '\0';
+					if(MS->cmd_pos < 0){
+						MS->cmd_pos = 0;
+					}
+					return 0;
+					break;
+				// Escape sequence detection
+				case '\033':
+					MS->ESC_f = Any_ESC;
+					return 0;
+					break;
+				// Default case to handle all characters
+				default:
+					DEFAULT:
+					MS->cmd[MS->cmd_pos] = c;
+					MS->cmd_pos = (MS->cmd_pos+1)%MICROSHELL_MAX_CMD;
+					if(MS->cmd_pos == 0){
+						MS->sends("\r\n/!\\ Max size of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
+					}
+					MS->sendc(c);
+					// Printf for debug purposes
+					// MS->sends("c value:");
+					// MS->sendc(c);
+					// MS->sends("\r\n");
+					return 0;
+					break;
+			}
+		case Any_ESC:
+			switch(c){
+				// Beginning of arrow detection
+				case 'A':
+					strcpy((char*)MS->cmd,(char*)MS->history[MS->history_pos]);
+					// We decrement when we go up since we use a simple list where index 0 is the oldest command and ...size-1 is the latest
+					MS->history_pos = (((MS->history_pos-1)%((MS->history_size-1))) == -1)?MS->history_size-1:((MS->history_pos-1)%((MS->history_size-1)));
+					if(MS->history_pos == MS->history_size-1){
+						MS->history_pos = 0;
+					}
+					MS->cmd_pos = strlen((char*)MS->cmd)-1;
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->ESC_f = No_ESC;
+					return 0;
+					break;
+				case 'B':
+					if(MS->history_pos == MS->history_size-1){
+						MS->cmd_pos = 0;
+						strcpy(MS->cmd,"");
+						MS->sends("\r\033[K> ");
+						MS->ESC_f = No_ESC;
+						return 0;
+					}
+					// Same logic here
+					MS->history_pos = (MS->history_pos+1)%MS->history_size;
+					strcpy((char *)MS->cmd,(char *)MS->history[MS->history_pos]);
+					MS->cmd_pos = strlen((char *)MS->cmd)-1;
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->ESC_f = No_ESC;
+					return 0;
+					break;
+				// Ending of arrow detection
+
+				// Beginning of function keys detection
+
+				case '1':
+					MS->ESC_f = Fn_ESC1;
+					return 0;
+					break;
+				case '2':
+					MS->ESC_f = Fn_ESC2;
+					return 0;
+					break;
+
+				// End of function keys detection
+
+				case '[':
+					return 0;
+					break;
+				default:
+					// MS->sends("Unknown or unused escape sequence");
+					MS->ESC_f = No_ESC;
+					return 0;
+					break;
+			}
+		break;
+		case Fn_ESC1:
+			switch(c){
+				case '1':
+					strcpy(MS->cmd, MS->F[0]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '2':
+					strcpy(MS->cmd, MS->F[1]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '3':
+					strcpy(MS->cmd, MS->F[2]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '4':
+					strcpy(MS->cmd, MS->F[3]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '5':
+					strcpy(MS->cmd, MS->F[4]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '7':
+					strcpy(MS->cmd, MS->F[5]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '8':
+					strcpy(MS->cmd, MS->F[6]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '9':
+					strcpy(MS->cmd, MS->F[7]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '~':
+					MS->ESC_f = No_ESC;
+					return 0;
+					break;
+				default:
+					goto DEFAULT;
+					return 0;
+					break;
+			}
+		case Fn_ESC2:
+			switch(c){
+				case '0':
+					strcpy(MS->cmd, MS->F[8]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '1':
+					strcpy(MS->cmd, MS->F[9]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '3':
+					strcpy(MS->cmd, MS->F[10]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '4':
+					strcpy(MS->cmd, MS->F[11]);
+					MS->sends("\r\033[K> ");
+					MS->sends(MS->cmd);
+					MS->cmd_pos = strlen(MS->cmd);
+					return 0;
+					// goto ENTER;
+					break;
+				case '~':
+					MS->ESC_f = No_ESC;
+					return 0;
+					break;
+				default:
+					goto DEFAULT;
+					return 0;
+					break;
+			}
+		default:
+			MS->ESC_f = No_ESC;
+			return 0;
+			break;
+	}
+	return 0;
+}
+
 void MicroShell_bind(MicroShell_t *MS, char(*getc)(void), void(*sendc)(char), void(*sends)(char*)){
 	MS->getc = getc;
 	MS->sendc = sendc;
 	MS->sends = sends;
+	MicroShell_shortcuts(MS, (char *[12]){"", "", "", "", "", "", "", "", "", "", "", ""});
 	MS->state_n = MS_INIT;
 }
 
-int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
-	char c = MS->getc();
-	if(MS->ESC == 0){
-		MS->ESC = 2;
-		switch(c){
-			// Beginning of arrow detection
-			case 'A':
-				strcpy((char*)MS->cmd,(char*)MS->history[MS->history_pos]);
-				// We decrement when we go up since we use a simple list where index 0 is the oldest command and ...size-1 is the latest
-				MS->history_pos = (((MS->history_pos-1)%((MS->history_size-1))) == -1)?MS->history_size-1:((MS->history_pos-1)%((MS->history_size-1)));
-				if(MS->history_pos == MS->history_size-1){
-					MS->history_pos = 0;
-				}
-				MS->cmd_pos = strlen((char*)MS->cmd)-1;
-				MS->sends("\r\033[K> ");
-				MS->sends(MS->cmd);
-				MS->sends("\b");
-				break;
-			case 'B':
-				if(MS->history_pos == MS->history_size-1){
-					MS->cmd_pos = 0;
-					strcpy(MS->cmd,"");
-					MS->sends("\r\033[K> ");
-					return 0;
-				}
-				// Same logic here
-				MS->history_pos = (MS->history_pos+1)%MS->history_size;
-				strcpy((char *)MS->cmd,(char *)MS->history[MS->history_pos]);
-				MS->cmd_pos = strlen((char *)MS->cmd)-1;
-				MS->sends("\r\033[K> ");
-				MS->sends(MS->cmd);
-				MS->sends("\b");
-				break;
-			// Ending of arrow detection
-			// Beginning of function keys detection
-	
-			case '1':
-				if(MS->F == 0){
-					MS->F = 1;
-					MS->ESC = 0;
-					return 0;
-				}
-				else if(MS->F == 1){
-					MS->F = 0;
-					MS->Fn_f = 1;
-					strcpy(MS->cmd, F1);
-					MS->sends("\r> ");
-					MS->sends(MS->cmd);
-					MS->cmd_pos = strlen(MS->cmd);
-					goto ENTER;
-				}
-				else if(MS->F == 2){
-					MS->F = 0;
-					MS->sends("F10 pressed\r\n");
-				}
-				break;
-			case '2':
-				if(MS->F == 0){
-					MS->F = 2;
-					MS->ESC = 0;
-					return 0;
-				}
-				else if(MS->F == 1){
-					MS->F = 0;
-					MS->sends("F2 pressed\r\n");
-				}
-				else if(MS->F == 2){
-					MS->F = 0;
-					MS->sends("F11 pressed\r\n");
-				}
-				break;
-	
-			// Ending of function keys detection
-			default:
-				// MS->sends("\r\nunused escape sequence detected (e[");
-				// MS->sends(c);
-				// MS->sends(")\r\n");
-				break;
-		}
-		return 0;
+void MicroShell_shortcuts(MicroShell_t *MS, char *F[12]){
+	for(int i = 0; i < 12; i++){
+		strncpy(MS->F[i], F[i], MICROSHELL_MAX_CMD+1);
 	}
-	switch(c){
-		case '\r':
-			ENTER:  // No need to rewrite this for \n since we can use a goto
-			MS->cmd[MS->cmd_pos++] = ' ';
-			MS->cmd[MS->cmd_pos] = '\0';
-			MS->sends("\r\n");
-			MS->state_n = MS_RUN;
-			if(MS->cmd_pos != 1){               
-				strcpy((char *)MS->history[MS->history_size], (char *)MS->cmd);
-				MS->history_size = (MS->history_size+1)%MICROSHELL_MAX_HISTORY_SIZE;
-				MS->history_pos = MS->history_size-1;
-			}
-			MS->cmd_pos = 0;
-			if(CMDS != NULL || CMDS_size != 0){
-				char *cmd = "0";
-				char *cmd0;
-				strcpy(cmd, MS->cmd);
-				cmd0 = strtok(cmd," ");
-				if(strcmp(cmd0,"reboot") == 0){
-					for(unsigned int i = 0; i < CMDS_size; i++){
-						if(strcmp(CMDS[i].cmd,cmd0) == 0){
-							CMDS[i].func(1,&cmd0);
-							return 0;
-						}
-					}
-				}
-			}
-			break;
-		case '\n':
-			goto ENTER;
-			break;
-		// Tab case, used to handle autocomplete
-		case '\t':
-			if(MS->cmd_pos == 0){
-				strcpy(MS->cmd,"help");
-				MS->sends("\r");
-				MS->state_n = MS_RUN;
-				return 0;
-			}
-			MS->cmd[MS->cmd_pos] = '\0';
-			MS_autocomplete(MS, CMDS, CMDS_size);
-			break;
-		// Backspace case
-		case '\177':
-			if(MS->cmd_pos > 0){
-				MS->sends("\b\033[K");
-			}
-			MS->cmd[MS->cmd_pos--] = '\0';
-			if(MS->cmd_pos < 0){
-				MS->cmd_pos = 0;
-			}
-			break;
-		// Escape sequence detection begin
-		case '\033':
-			MS->ESC--;
-			break;
-		// Escape sequence introducer, we still want it to be taken into account for a command when not in an escape sequence
-		case '[':
-			if(MS->ESC == 1){
-				MS->ESC--;
-			}
-			else{
-				goto DEFAULT;
-			}
-			break;
-		case '~':
-			if(MS->Fn_f){
-				MS->Fn_f = 0;
-				break;
-			}
-			else{
-				goto DEFAULT;
-			}
-			break;
-		// Default case to handle all characters
-		default:
-			DEFAULT:
-			MS->cmd[MS->cmd_pos] = c;
-			MS->cmd_pos = (MS->cmd_pos+1)%MICROSHELL_MAX_CMD;
-			if(MS->cmd_pos == 0){
-				MS->sends("\r\n/!\\ Max size of a command overflow, you erased it, might consider overriding MICROSHELL_MAX_CMD\r\n> ");
-			}
-			MS->sendc(c);
-			// Printf for debug purposes
-			// MS->sends("c value:");
-			// MS->sends(c);
-			// MS->sends("\r\n");
-			break;
+}
+
+void MicroShell_shortcut(MicroShell_t *MS, char Fn, char F[]){
+	if(Fn < 1 && Fn > 12){
+		return ;
 	}
-	return 0;
+	strncpy(MS->F[Fn-1], F, MICROSHELL_MAX_CMD+1);
 }

@@ -29,25 +29,27 @@ typedef struct{
 	char(*getc)(void);
 	void(*sendc)(char);
 	void(*sends)(char*);
-	char cmd[MICROSHELL_MAX_CMD];
+	char cmd[MICROSHELL_MAX_CMD+2];
 	int cmd_pos;
-	char history[MICROSHELL_MAX_HISTORY_SIZE][MICROSHELL_MAX_CMD];
+	char history[MICROSHELL_MAX_HISTORY_SIZE][MICROSHELL_MAX_CMD+2];
 	int history_size;
 	int history_pos;
 	MicroShell_s state;
 	MicroShell_s state_n;
 	short unsigned int from_history;
-	short unsigned int ESC;
-	short unsigned int Fn_f;
-	short unsigned int F;
+	short unsigned int ESC_f;
+	char F[12][MICROSHELL_MAX_CMD+1];
+	short unsigned int F_set[12];
 } MicroShell_t;
 
 void MicroShell(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size);
-void MicroShell_bind(MicroShell_t *MS, char(*getc)(void), void(*sendc)(char), void(*sends)(char*));
 int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size);
+
+void MicroShell_bind(MicroShell_t *MS, char(*getc)(void), void(*sendc)(char), void(*sends)(char*));
+void MicroShell_shortcuts(MicroShell_t *MS, char *F[12]);
+void MicroShell_shortcut(MicroShell_t *MS, char Fn, char F[]);
 
 #define sizeof_CMDS(CMDS) (unsigned int)sizeof(CMDS)/sizeof(cmd_t)
 
-extern char __attribute__((weak)) F1[];
 
 #endif
