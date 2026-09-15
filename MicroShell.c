@@ -7,7 +7,6 @@ enum {No_ESC = 0, Any_ESC, Fn_ESC1, Fn_ESC2};
 
 #define def_cmd(func) int func(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv)
 
-// int cmd_help(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size, int argc, char **argv);
 def_cmd(cmd_help);
 def_cmd(cmd_clear);
 def_cmd(cmd_shortcuts);
@@ -373,7 +372,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '2':
 					strcpy(MS->cmd, MS->F[1]);
@@ -381,7 +379,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '3':
 					strcpy(MS->cmd, MS->F[2]);
@@ -389,7 +386,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '4':
 					strcpy(MS->cmd, MS->F[3]);
@@ -397,7 +393,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '5':
 					strcpy(MS->cmd, MS->F[4]);
@@ -405,7 +400,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '7':
 					strcpy(MS->cmd, MS->F[5]);
@@ -413,7 +407,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '8':
 					strcpy(MS->cmd, MS->F[6]);
@@ -421,7 +414,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '9':
 					strcpy(MS->cmd, MS->F[7]);
@@ -429,7 +421,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '~':
 					MS->ESC_f = No_ESC;
@@ -448,7 +439,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '1':
 					strcpy(MS->cmd, MS->F[9]);
@@ -456,7 +446,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '3':
 					strcpy(MS->cmd, MS->F[10]);
@@ -464,7 +453,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '4':
 					strcpy(MS->cmd, MS->F[11]);
@@ -472,7 +460,6 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size){
 					MS->sends(MS->cmd);
 					MS->cmd_pos = strlen(MS->cmd);
 					return 0;
-					// goto ENTER;
 					break;
 				case '~':
 					MS->ESC_f = No_ESC;
