@@ -22,7 +22,14 @@ typedef struct{
 typedef enum{
 	MS_INIT = 0,
 	MS_IDLE,
-	MS_RUN
+	MS_RUN,
+	MS_TAB,
+	MS_UP,
+	MS_DOWN,
+	// MS_LEFT,
+	// MS_RIGHT,
+	MS_FUNCTION,
+	MS_BACKSPACE
 } MicroShell_s;
 
 typedef struct{
@@ -36,10 +43,11 @@ typedef struct{
 	int history_pos;
 	MicroShell_s state;
 	MicroShell_s state_n;
+	short unsigned int Ctrl_C;
 	short unsigned int from_history;
+	short unsigned int Fn_key;
 	short unsigned int ESC_f;
 	char F[12][MICROSHELL_MAX_CMD+1];
-	short unsigned int F_set[12];
 } MicroShell_t;
 
 void MicroShell(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size);
@@ -48,6 +56,9 @@ int MicroShell_acquire(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size);
 void MicroShell_bind(MicroShell_t *MS, char(*getc)(void), void(*sendc)(char), void(*sends)(char*));
 void MicroShell_shortcuts(MicroShell_t *MS, char *F[12]);
 void MicroShell_shortcut(MicroShell_t *MS, char Fn, char F[]);
+
+short unsigned int MicroShell_Ctrl_C(MicroShell_t *MS);
+void MicroShell_reset_Ctrl_C(MicroShell_t *MS);
 
 #define sizeof_CMDS(CMDS) (unsigned int)sizeof(CMDS)/sizeof(cmd_t)
 

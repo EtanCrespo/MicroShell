@@ -6,7 +6,7 @@ To use it just include ```MicroShell.h``` in your main.
 
 ## Functions
 
-it contains 5 functions:
+it contains 7 functions:
  - ```MicroShell(MicroShell_t *MS, cmd_t CMDS[], unsigned int CMDS_size)```
     - Function to call in your main loop to run the command interpreter
 
@@ -21,6 +21,12 @@ it contains 5 functions:
 
  - ```void MicroShell_shortcut(MicroShell_t *MS, char Fn, char F[])```
     - Function to change only one shortcut (Fn between 1 and 12)
+   
+ - ```short unsigned int MicroShell_Ctrl_C(MicroShell_t *MS)```
+    - Function to get Ctrl-C state
+
+ - ```void MicroShell_reset_Ctrl_C(MicroShell_t *MS)```
+    - Function to reset Ctrl-C state
 
 and 1 macro:
  - ```sizeof_CMDS(CMDS)```
@@ -76,4 +82,4 @@ Thoses values are:
  - Supports backspace
  - You can override default command by using the same string to call your command
  - No spaces allowed in a command name or arguments
- - Pressing any key of the function row fills your cmd interpreter with a defined string (only works with PuTTY so far)
+ - Pressing any key of the function row fills your cmd interpreter with a defined string (only works with PuTTY)
